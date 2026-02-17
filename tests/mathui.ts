@@ -1,20 +1,19 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* globals document, Event  */
 
-import ClassicEditor from '@ckeditor/ckeditor5-editor-classic/src/classiceditor.js';
 import { keyCodes } from '@ckeditor/ckeditor5-utils/src/keyboard.js';
-import { setData as setModelData } from '@ckeditor/ckeditor5-engine/src/dev-utils/model.js';
 
 import MathUI from '../src/mathui';
 import MainFormView from '../src/ui/mainformview';
-import ContextualBalloon from '@ckeditor/ckeditor5-ui/src/panel/balloon/contextualballoon.js';
-import ButtonView from '@ckeditor/ckeditor5-ui/src/button/buttonview.js';
-import View from '@ckeditor/ckeditor5-ui/src/view.js';
-import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph.js';
 
-import ClickObserver from '@ckeditor/ckeditor5-engine/src/view/observer/clickobserver.js';
 import { expect } from 'chai';
-import type { SinonSpy } from 'sinon';
+import { type SinonSpy, assert, spy, stub } from "sinon";
+import { ClassicEditor } from '@ckeditor/ckeditor5-editor-classic';
+import { ButtonView, ContextualBalloon } from 'ckeditor5';
+import { Paragraph } from '@ckeditor/ckeditor5-paragraph';
+import { ClickObserver } from 'ckeditor5/src/engine';
+import { _setModelData as setModelData } from '@ckeditor/ckeditor5-engine';
+import { View } from 'ckeditor5/src/ui';
 
 describe( 'MathUI', () => {
 	let editorElement: HTMLDivElement;
@@ -49,8 +48,8 @@ describe( 'MathUI', () => {
 				formView = mathUIFeature.formView;
 
 				// There is no point to execute BalloonPanelView attachTo and pin methods so lets override it.
-				sinon.stub( balloon.view, 'attachTo' ).returns( false );
-				sinon.stub( balloon.view, 'pin' ).returns();
+				stub( balloon.view, 'attachTo' ).returns( false );
+				stub( balloon.view, 'pin' ).returns();
 
 				formView?.render();
 			} );
@@ -99,10 +98,10 @@ describe( 'MathUI', () => {
 			} );
 
 			it( 'should call #_showUI upon #execute', () => {
-				const spy = sinon.stub( mathUIFeature, '_showUI' ).returns( );
+				const spy = stub( mathUIFeature, '_showUI' ).returns( );
 
 				mathButton.fire( 'execute' );
-				sinon.assert.calledOnce( spy );
+				assert.calledOnce( spy );
 			} );
 		} );
 	} );
@@ -111,7 +110,7 @@ describe( 'MathUI', () => {
 		let balloonAddSpy: SinonSpy;
 
 		beforeEach( () => {
-			balloonAddSpy = sinon.spy( balloon, 'add' );
+			balloonAddSpy = spy( balloon, 'add' );
 			editor.editing.view.document.isFocused = true;
 		} );
 
@@ -144,7 +143,7 @@ describe( 'MathUI', () => {
 			mathUIFeature._showUI();
 
 			expect( balloon.visibleView ).to.equal( formView );
-			sinon.assert.calledWithExactly( balloonAddSpy, {
+			assert.calledWithExactly( balloonAddSpy, {
 				view: formView,
 				position: {
 					target: selectedRange
@@ -159,7 +158,7 @@ describe( 'MathUI', () => {
 			mathUIFeature._showUI();
 
 			expect( balloon.visibleView ).to.equal( formView );
-			sinon.assert.calledWithExactly( balloonAddSpy, {
+			assert.calledWithExactly( balloonAddSpy, {
 				view: formView,
 				position: {
 					target: selectedRange
@@ -201,17 +200,17 @@ describe( 'MathUI', () => {
 			} );
 
 			it( 'should focus the `editable` by default', () => {
-				const spy = sinon.spy( editor.editing.view, 'focus' );
+				const sinonSpy = spy( editor.editing.view, 'focus' );
 
 				mathUIFeature._hideUI();
 
 				// First call is from _removeFormView.
-				sinon.assert.calledTwice( spy );
+				assert.calledTwice( sinonSpy );
 			} );
 
 			it( 'should focus the `editable` before before removing elements from the balloon', () => {
-				const focusSpy = sinon.spy( editor.editing.view, 'focus' );
-				const removeSpy = sinon.spy( balloon, 'remove' );
+				const focusSpy = spy( editor.editing.view, 'focus' );
+				const removeSpy = spy( balloon, 'remove' );
 
 				mathUIFeature._hideUI();
 
@@ -227,19 +226,18 @@ describe( 'MathUI', () => {
 			} );
 
 			it( 'should clear ui#update listener from the ViewDocument', () => {
-				const spy = sinon.spy();
-
-				mathUIFeature.listenTo( editor.ui, 'update', spy );
+				const sinonSpy = spy();
+				mathUIFeature.listenTo( editor.ui, 'update', sinonSpy );
 				mathUIFeature._hideUI();
 				editor.ui.fire( 'update' );
 
-				sinon.assert.notCalled( spy );
+				assert.notCalled( sinonSpy );
 			} );
 		} );
 
 		describe( 'keyboard support', () => {
 			it( 'should show the UI on Ctrl+M keystroke', () => {
-				const spy = sinon.stub( mathUIFeature, '_showUI' ).returns( );
+				const spy = stub( mathUIFeature, '_showUI' ).returns( );
 				const command = editor.commands.get( 'math' )!;
 
 				command.isEnabled = false;
@@ -250,23 +248,23 @@ describe( 'MathUI', () => {
 					altKey: false,
 					shiftKey: false,
 					metaKey: false,
-					preventDefault: sinon.spy(),
-					stopPropagation: sinon.spy()
+					preventDefault: spy(),
+					stopPropagation: spy()
 				};
 
 				editor.keystrokes.press( keydata );
 
-				sinon.assert.notCalled( spy );
+				assert.notCalled( spy );
 
 				command.isEnabled = true;
 
 				editor.keystrokes.press( keydata );
-				sinon.assert.calledOnce( spy );
+				assert.calledOnce( spy );
 			} );
 
 			it( 'should prevent default action on Ctrl+M keystroke', () => {
-				const preventDefaultSpy = sinon.spy();
-				const stopPropagationSpy = sinon.spy();
+				const preventDefaultSpy = spy();
+				const stopPropagationSpy = spy();
 
 				const keyEvtData = {
 					altKey: false,
@@ -280,8 +278,8 @@ describe( 'MathUI', () => {
 
 				editor.keystrokes.press( keyEvtData );
 
-				sinon.assert.calledOnce( preventDefaultSpy );
-				sinon.assert.calledOnce( stopPropagationSpy );
+				assert.calledOnce( preventDefaultSpy );
+				assert.calledOnce( stopPropagationSpy );
 			} );
 
 			it( 'should make stack with math visible on Ctrl+M keystroke - no math', () => {
@@ -300,8 +298,8 @@ describe( 'MathUI', () => {
 					altKey: false,
 					shiftKey: false,
 					metaKey: false,
-					preventDefault: sinon.spy(),
-					stopPropagation: sinon.spy()
+					preventDefault: spy(),
+					stopPropagation: spy()
 				};
 
 				editor.keystrokes.press( keyEvtData );
@@ -328,47 +326,47 @@ describe( 'MathUI', () => {
 					shiftKey: false,
 					metaKey: false,
 					// @ts-expect-error - preventDefault
-					preventDefault: sinon.spy(),
-					stopPropagation: sinon.spy()
+					preventDefault: spy(),
+					stopPropagation: spy()
 				} );
 
 				expect( balloon.visibleView ).to.equal( formView );
 			} );
 
 			it( 'should hide the UI after Esc key press (from editor) and not focus the editable', () => {
-				const spy = sinon.spy( mathUIFeature, '_hideUI' );
+				const sinonSpy = spy( mathUIFeature, '_hideUI' );
 				const keyEvtData = {
 					altKey: false,
 					ctrlKey: false,
 					shiftKey: false,
 					metaKey: false,
 					keyCode: keyCodes.esc,
-					preventDefault: sinon.spy(),
-					stopPropagation: sinon.spy()
+					preventDefault: spy(),
+					stopPropagation: spy()
 				};
 
 				// Balloon is visible.
 				mathUIFeature._showUI();
 				editor.keystrokes.press( keyEvtData );
 
-				sinon.assert.calledWithExactly( spy );
+				assert.calledWithExactly( sinonSpy );
 			} );
 
 			it( 'should not hide the UI after Esc key press (from editor) when UI is open but is not visible', () => {
-				const spy = sinon.spy( mathUIFeature, '_hideUI' );
+				const sinonSpy = spy( mathUIFeature, '_hideUI' );
 				const keyEvtData = {
 					altKey: false,
 					shiftKey: false,
 					ctrlKey: false,
 					metaKey: false,
 					keyCode: keyCodes.esc,
-					preventDefault: sinon.spy(),
-					stopPropagation: sinon.spy()
+					preventDefault: spy(),
+					stopPropagation: spy()
 				};
 
 				const viewMock = new View();
-				sinon.stub( viewMock, 'render' );
-				sinon.stub( viewMock, 'destroy' );
+				stub( viewMock, 'render' );
+				stub( viewMock, 'destroy' );
 
 				mathUIFeature._showUI();
 
@@ -376,27 +374,27 @@ describe( 'MathUI', () => {
 				balloon.add( { view: viewMock } );
 				editor.keystrokes.press( keyEvtData );
 
-				sinon.assert.notCalled( spy );
+				assert.notCalled( sinonSpy );
 			} );
 		} );
 
 		describe( 'mouse support', () => {
 			it( 'should hide the UI and not focus editable upon clicking outside the UI', () => {
-				const spy = sinon.spy( mathUIFeature, '_hideUI' );
+				const sinonSpy = spy( mathUIFeature, '_hideUI' );
 
 				mathUIFeature._showUI();
 				document.body.dispatchEvent( new Event( 'mousedown', { bubbles: true } ) );
 
-				sinon.assert.calledWithExactly( spy );
+				assert.calledWithExactly( sinonSpy );
 			} );
 
 			it( 'should not hide the UI upon clicking inside the the UI', () => {
-				const spy = sinon.spy( mathUIFeature, '_hideUI' );
+				const sinonSpy = spy( mathUIFeature, '_hideUI' );
 
 				mathUIFeature._showUI();
 				balloon.view.element!.dispatchEvent( new Event( 'mousedown', { bubbles: true } ) );
 
-				sinon.assert.notCalled( spy );
+				assert.notCalled( sinonSpy );
 			} );
 		} );
 
@@ -426,7 +424,7 @@ describe( 'MathUI', () => {
 				} );
 
 				it( 'should execute math command on mainFormView#submit event', () => {
-					const executeSpy = sinon.spy( editor, 'execute' );
+					const executeSpy = spy( editor, 'execute' );
 
 					formView!.mathInputView.value = 'x^2';
 					expect( formView!.mathInputView.fieldView.element!.value ).to.equal( 'x^2' );
@@ -452,8 +450,8 @@ describe( 'MathUI', () => {
 						metaKey: false,
 						ctrlKey: false,
 						keyCode: keyCodes.esc,
-						preventDefault: sinon.spy(),
-						stopPropagation: sinon.spy()
+						preventDefault: spy(),
+						stopPropagation: spy()
 					};
 
 					mathUIFeature._showUI();
@@ -466,8 +464,8 @@ describe( 'MathUI', () => {
 				it( 'should blur math input element before hiding the view', () => {
 					mathUIFeature._showUI();
 
-					const focusSpy = sinon.spy( formView!.saveButtonView, 'focus' );
-					const removeSpy = sinon.spy( balloon, 'remove' );
+					const focusSpy = spy( formView!.saveButtonView, 'focus' );
+					const removeSpy = spy( balloon, 'remove' );
 
 					formView!.fire( 'cancel' );
 

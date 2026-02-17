@@ -1,14 +1,14 @@
 import Mathematics from '../src/math';
 import AutoMath from '../src/automath';
-import ClassicEditor from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
-import Clipboard from '@ckeditor/ckeditor5-clipboard/src/clipboard';
-import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
-import Undo from '@ckeditor/ckeditor5-undo/src/undo';
-import Typing from '@ckeditor/ckeditor5-typing/src/typing';
-import global from '@ckeditor/ckeditor5-utils/src/dom/global';
-import { getData, setData } from '@ckeditor/ckeditor5-engine/src/dev-utils/model';
+import { global } from '@ckeditor/ckeditor5-utils';
+import { _setModelData as setData, _getModelData as getData } from '@ckeditor/ckeditor5-engine';
 import { expect } from 'chai';
-import type { SinonFakeTimers } from 'sinon';
+import { type SinonFakeTimers, useFakeTimers } from 'sinon';
+import { ClassicEditor } from '@ckeditor/ckeditor5-editor-classic';
+import { Typing } from 'ckeditor5';
+import { Paragraph } from '@ckeditor/ckeditor5-paragraph';
+import { Undo } from 'ckeditor5/src/undo';
+import { Clipboard } from 'ckeditor5/src/clipboard';
 
 describe( 'AutoMath - integration', () => {
 	let editorElement: HTMLDivElement, editor: ClassicEditor;
@@ -57,7 +57,7 @@ describe( 'AutoMath - integration', () => {
 		let clock: SinonFakeTimers;
 
 		beforeEach( () => {
-			clock = sinon.useFakeTimers();
+			clock = useFakeTimers();
 		} );
 
 		afterEach( () => {
